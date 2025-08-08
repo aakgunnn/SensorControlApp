@@ -1,24 +1,27 @@
 package com.example.sensorcontrolapp.ui.nav
 
-import androidx.compose.runtime.*
-import androidx.navigation.*
-import androidx.navigation.compose.*
-import com.example.sensorcontrolapp.data.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.example.sensorcontrolapp.data.ConfigManager
+import com.example.sensorcontrolapp.data.UsbSerialManager
 import com.example.sensorcontrolapp.data.log.CommandLog
+import com.example.sensorcontrolapp.data.log.CommandLogDao
+import com.example.sensorcontrolapp.model.UserConfig
 import com.example.sensorcontrolapp.ui.config.ConfigScreen
 import com.example.sensorcontrolapp.ui.config.SensorConfigScreen
 import com.example.sensorcontrolapp.ui.home.HomeScreen
+import com.example.sensorcontrolapp.ui.log.LogScreen
 import com.example.sensorcontrolapp.ui.login.LoginScreen
 import com.example.sensorcontrolapp.ui.login.LoginViewModel
-import com.example.sensorcontrolapp.ui.log.LogScreen
-import com.example.sensorcontrolapp.ui.sensor.details.SensorDetailScreen
+import com.example.sensorcontrolapp.ui.sensor.SensorControlScreen
 import com.example.sensorcontrolapp.ui.sensor.SensorStatesViewModel
-import com.example.sensorcontrolapp.data.log.CommandLogDao
+import com.example.sensorcontrolapp.ui.sensor.details.SensorDetailScreen
 import com.example.sensorcontrolapp.ui.session.UserSessionViewModel
-import com.example.sensorcontrolapp.model.UserConfig
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+
 
 @Composable
 fun AppNavGraph(
@@ -156,27 +159,54 @@ fun AppNavGraph(
             }
         }
 
-        composable(
-            route = NavRoutes.SENSOR_CONTROL
-        ) {
-            // Burada sensorKey geçmiyor, doğrudan SensorDetailScreen açılıyor.
-            // Eğer sensorKey parametreli olacaksa SENSOR_DETAILS mantığına göre düzenlenebilir.
-            val defaultSensorKey = "DEFAULT" // Eğer belirli bir sensör kontrolü açılacaksa
-            val readingFlow = sensorStatesViewModel.getOrCreateReading(defaultSensorKey)
+        composable(NavRoutes.SENSOR_CONTROL) {
+            val user = sessionViewModel.currentUser.collectAsState().value
+            val config = sessionViewModel.userConfig.collectAsState().value
+            val receivedText = usbSerialManager.receivedData
 
-            val scope = rememberCoroutineScope()
-            val receivedFlow: StateFlow<String> = remember {
-                readingFlow.map { it.toString() }
-                    .stateIn(scope, SharingStarted.Eagerly, "0")
+            if (user != null && config != null) {
+                SensorControlScreen(
+                    onSendCommand = { command ->
+                        usbSerialManager.send(command)
+                        CommandLog.log(
+                            username = user.username,
+                            command = command,
+                            screen = "SensorControlScreen"
+                        )
+                    },
+                    onBack = { navController.popBackStack() },
+                    receivedText = receivedText,
+                    onNavigateToSensorDetail = { sensorKey ->
+                        navController.navigate("${NavRoutes.SENSOR_DETAIL}/$sensorKey")
+                    },
+                    sensorStatesViewModel = sensorStatesViewModel
+                )
             }
 
+
+        }
+
+        composable(
+            route = "${NavRoutes.SENSOR_DETAIL}/{sensorKey}",
+            arguments = listOf(navArgument("sensorKey") { defaultValue = "" })
+        ) { backStackEntry ->
+            val sensorKey = backStackEntry.arguments?.getString("sensorKey") ?: ""
+            val receivedText = usbSerialManager.receivedData
+
             SensorDetailScreen(
-                sensorKey = defaultSensorKey,
-                sensorStatesViewModel = sensorStatesViewModel,
+                sensorKey = sensorKey,
+                onBack = { navController.popBackStack() },
                 onSendCommand = { usbSerialManager.send(it) },
-                receivedText = receivedFlow,
-                onBack = { navController.popBackStack() }
+                receivedText = receivedText,
+                sensorStatesViewModel = sensorStatesViewModel,
+                sessionViewModel = sessionViewModel
             )
         }
+
+
+
+
+
+
     }
 }

@@ -14,7 +14,7 @@ import com.example.sensorcontrolapp.data.log.CommandLog
 import com.example.sensorcontrolapp.ui.session.UserSessionViewModel
 import com.example.sensorcontrolapp.model.UserConfig
 import kotlinx.coroutines.delay
-import androidx.hilt.navigation.compose.hiltViewModel // ← Hilt kullanılacaksa bu gerekiyor
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -26,9 +26,10 @@ fun SensorDetailScreen(
     onSendCommand: (String) -> Unit,
     receivedText: StateFlow<String>,
     sensorStatesViewModel: SensorStatesViewModel = viewModel(),
-    sessionViewModel: UserSessionViewModel = hiltViewModel() // Hilt ile enjekte
+    sessionViewModel: UserSessionViewModel
 
 ) {
+    val sessionViewModel: UserSessionViewModel = viewModel()
     val user by sessionViewModel.currentUser.collectAsState()
     val config: UserConfig? by sessionViewModel.userConfig.collectAsState()
 

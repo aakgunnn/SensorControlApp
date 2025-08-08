@@ -7,5 +7,8 @@ object NavRoutes {
     const val LOGS = "logs"
     const val SENSOR_CONTROL = "sensor_control"
     const val SENSOR_CONFIG = "sensor_config"
-    const val SENSOR_DETAILS = "sensor_details"
+    const val SENSOR_DETAIL = "sensor_detail"
+
+
+
 }

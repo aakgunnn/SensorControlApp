@@ -1,13 +1,15 @@
 package com.example.sensorcontrolapp.ui.sensor
 
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sensorcontrolapp.data.log.CommandLog
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import androidx.compose.runtime.State
+import kotlinx.coroutines.launch
 
 class SensorStatesViewModel : ViewModel() {
 

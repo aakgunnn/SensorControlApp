@@ -67,11 +67,15 @@ fun ConfigScreen(
             ) {
                 Checkbox(
                     checked = selectedSensors.contains(sensorKey),
-                    onCheckedChange = {
-                        selectedSensors = if (it) {
-                            (selectedSensors + sensorKey).distinct().toMutableList()
+                    onCheckedChange = { isChecked ->
+                        if (isChecked) {
+                            selectedSensors = (selectedSensors + sensorKey).distinct().toMutableList()
                         } else {
-                            selectedSensors.filterNot { it == sensorKey }.toMutableList()
+                            selectedSensors = selectedSensors.filterNot { it == sensorKey }.toMutableList()
+
+
+                            sensorStatesViewModel.setSensorState(sensorKey, false)
+                            onSendCommand("${sensorKey}_OFF")
                         }
                     }
                 )

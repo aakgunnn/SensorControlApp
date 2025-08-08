@@ -21,6 +21,8 @@ import com.example.sensorcontrolapp.ui.sensor.SensorControlScreen
 import com.example.sensorcontrolapp.ui.sensor.SensorStatesViewModel
 import com.example.sensorcontrolapp.ui.sensor.details.SensorDetailScreen
 import com.example.sensorcontrolapp.ui.session.UserSessionViewModel
+import androidx.compose.runtime.LaunchedEffect
+
 
 
 @Composable
@@ -165,6 +167,14 @@ fun AppNavGraph(
             val receivedText = usbSerialManager.receivedData
 
             if (user != null && config != null) {
+                LaunchedEffect(Unit) {
+                    sensorStatesViewModel.setLoggerEnvironment(
+                        username = user.username,
+                        getOutput = { receivedText.value },
+                        refreshIntervalMs = config.defaultSensorRefreshMs,
+                        enabledSensors = config.enabledSensors
+                    )
+                }
                 SensorControlScreen(
                     onSendCommand = { command ->
                         usbSerialManager.send(command)

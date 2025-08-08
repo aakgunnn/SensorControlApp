@@ -14,7 +14,6 @@ import com.example.sensorcontrolapp.data.log.CommandLog
 import com.example.sensorcontrolapp.ui.session.UserSessionViewModel
 import com.example.sensorcontrolapp.model.UserConfig
 import kotlinx.coroutines.delay
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -31,10 +30,10 @@ fun SensorDetailScreen(
 ) {
     val sessionViewModel: UserSessionViewModel = viewModel()
     val user by sessionViewModel.currentUser.collectAsState()
-    val config: UserConfig? by sessionViewModel.userConfig.collectAsState()
+    val userConfigState by sessionViewModel.userConfig.collectAsState()
 
     val currentUserState = rememberUpdatedState(user)
-    val currentConfigState = rememberUpdatedState(config)
+
     val safeFlow = receivedText ?: MutableStateFlow("")
     val currentOutput = safeFlow.collectAsState().value ?: ""
     val outputLines = if (currentOutput.isNotEmpty()) {
@@ -44,7 +43,9 @@ fun SensorDetailScreen(
     }
 
     val isEnabled by sensorStatesViewModel.getSensorState(sensorKey).collectAsState(initial = false)
-    val isSensorAllowed = config?.enabledSensors?.contains(sensorKey) == true
+    val isSensorAllowed = remember(userConfigState) {
+        userConfigState?.enabledSensors?.contains(sensorKey) == true
+    }
     val displayName = getSensorDisplayName(sensorKey)
 
     var hasLoggedResponse by remember { mutableStateOf(false) }

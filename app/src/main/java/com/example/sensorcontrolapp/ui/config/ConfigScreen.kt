@@ -12,6 +12,10 @@ import com.example.sensorcontrolapp.model.UserConfig
 import com.example.sensorcontrolapp.model.CurrentRange
 import androidx.compose.ui.Alignment
 import com.example.sensorcontrolapp.ui.sensor.SensorStatesViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+
+
 
 @Composable
 fun ConfigScreen(
@@ -21,6 +25,7 @@ fun ConfigScreen(
     onNavigateToSensorConfig: (String) -> Unit,
     sensorStatesViewModel: SensorStatesViewModel,
     onSendCommand: (String) -> Unit
+
 ) {
     var selectedSensors by remember { mutableStateOf(initialConfig.enabledSensors.toMutableList()) }
     var refreshMs by remember { mutableStateOf(initialConfig.defaultSensorRefreshMs.toString()) }
@@ -28,6 +33,7 @@ fun ConfigScreen(
     val currentLimits = remember {
         mutableStateMapOf<String, CurrentRange>().apply { putAll(initialConfig.currentLimits) }
     }
+    val scope = rememberCoroutineScope()
 
     val sensorOptions = listOf(
         "TEMP" to "Sıcaklık Sensörü",
@@ -65,16 +71,28 @@ fun ConfigScreen(
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Checkbox(
+                Switch(
                     checked = selectedSensors.contains(sensorKey),
                     onCheckedChange = { isChecked ->
                         if (isChecked) {
+                            // sadece config'e ekle; runtime'i otomatik başlatmıyoruz
                             selectedSensors = (selectedSensors + sensorKey).distinct().toMutableList()
+
+                            if (sensorKey == "SERVO"){
+                                scope.launch {
+                                    //servo bloguna girmek icin
+                                    onSendCommand("SERVO")
+                                    delay(50)
+                                    //Servo_init aktif, HAL_TIM_PWM_Start
+                                    onSendCommand("SERVO_ON") }
+
+
+                            }
                         } else {
+                            // config'ten çıkar + runtime'i kapat + karta OFF gönder
                             selectedSensors = selectedSensors.filterNot { it == sensorKey }.toMutableList()
-
-
                             sensorStatesViewModel.setSensorState(sensorKey, false)
+                            onSendCommand("${sensorKey}")
                             onSendCommand("${sensorKey}_OFF")
                         }
                     }

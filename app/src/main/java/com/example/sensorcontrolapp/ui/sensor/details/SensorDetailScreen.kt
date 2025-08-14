@@ -28,7 +28,6 @@ fun SensorDetailScreen(
     sessionViewModel: UserSessionViewModel
 
 ) {
-    val sessionViewModel: UserSessionViewModel = viewModel()
     val user by sessionViewModel.currentUser.collectAsState()
     val userConfigState by sessionViewModel.userConfig.collectAsState()
 
@@ -114,6 +113,7 @@ fun SensorDetailScreen(
                             onSendCommand(sensorKey)
                             onSendCommand("${sensorKey}_ON")
                         } else {
+                            onSendCommand(sensorKey)
                             onSendCommand("${sensorKey}_OFF")
                         }
                     }

@@ -18,12 +18,10 @@ import com.example.sensorcontrolapp.ui.log.LogScreen
 import com.example.sensorcontrolapp.ui.login.LoginScreen
 import com.example.sensorcontrolapp.ui.login.LoginViewModel
 import com.example.sensorcontrolapp.ui.sensor.SensorControlScreen
-import com.example.sensorcontrolapp.ui.sensor.SensorStatesViewModel
 import com.example.sensorcontrolapp.ui.sensor.details.SensorDetailScreen
+import com.example.sensorcontrolapp.ui.sensor.SensorStatesViewModel
 import com.example.sensorcontrolapp.ui.session.UserSessionViewModel
 import androidx.compose.runtime.LaunchedEffect
-
-
 
 @Composable
 fun AppNavGraph(
@@ -34,7 +32,6 @@ fun AppNavGraph(
     configManager: ConfigManager,
     sessionViewModel: UserSessionViewModel,
     sensorStatesViewModel: SensorStatesViewModel,
-
     onLogout: () -> Unit,
     onSendCommand: (String) -> Unit
 ) {
@@ -71,9 +68,7 @@ fun AppNavGraph(
                     onLogout = {
                         configManager.saveConfig(user.username, config)
                         sessionViewModel.logout()
-                        navController.navigate(NavRoutes.LOGIN) {
-                            popUpTo(0)
-                        }
+                        navController.navigate(NavRoutes.LOGIN) { popUpTo(0) }
                     },
                     onSendCommand = { command ->
                         usbSerialManager.send(command)
@@ -127,6 +122,9 @@ fun AppNavGraph(
             val sensorKey = backStackEntry.arguments?.getString("sensor") ?: ""
             println("Opened SensorConfigScreen for: $sensorKey")
 
+            // ⬇️ username için user state
+            val userForConfig = sessionViewModel.currentUser.collectAsState().value
+
             SensorConfigScreen(
                 sensorKey = sensorKey,
                 sensorStatesViewModel = sensorStatesViewModel,
@@ -139,7 +137,17 @@ fun AppNavGraph(
                     }
                     navController.popBackStack()
                 },
-                onSendCommand = { usbSerialManager.send(it) },
+                // ⬇️ LOG EKLENDİ
+                onSendCommand = { command ->
+                    usbSerialManager.send(command)
+                    userForConfig?.let {
+                        CommandLog.log(
+                            username = it.username,
+                            command = command,
+                            screen = "SensorConfigScreen"
+                        )
+                    }
+                },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -155,6 +163,9 @@ fun AppNavGraph(
                         } catch (e: Exception) {
                             emptyList()
                         }
+                    },
+                    onClearUserLogs = { username ->                 // ⬅️ EKLENDİ
+                        commandLogDao.deleteLogsForUser(username)
                     },
                     onBack = { navController.popBackStack() }
                 )
@@ -192,31 +203,36 @@ fun AppNavGraph(
                     sensorStatesViewModel = sensorStatesViewModel
                 )
             }
-
-
         }
 
-        composable(
+        composable( // sensordetailscreen
             route = "${NavRoutes.SENSOR_DETAIL}/{sensorKey}",
             arguments = listOf(navArgument("sensorKey") { defaultValue = "" })
         ) { backStackEntry ->
             val sensorKey = backStackEntry.arguments?.getString("sensorKey") ?: ""
             val receivedText = usbSerialManager.receivedData
 
+            // username için user state
+            val userForDetail = sessionViewModel.currentUser.collectAsState().value
+
             SensorDetailScreen(
                 sensorKey = sensorKey,
                 onBack = { navController.popBackStack() },
-                onSendCommand = { usbSerialManager.send(it) },
+                //  LOG EKLENDİ
+                onSendCommand = { command ->
+                    usbSerialManager.send(command)
+                    userForDetail?.let {
+                        CommandLog.log(
+                            username = it.username,
+                            command = command,
+                            screen = "SensorDetailScreen"
+                        )
+                    }
+                },
                 receivedText = receivedText,
                 sensorStatesViewModel = sensorStatesViewModel,
                 sessionViewModel = sessionViewModel
             )
         }
-
-
-
-
-
-
     }
 }

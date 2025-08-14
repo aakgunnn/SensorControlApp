@@ -11,4 +11,7 @@ interface CommandLogDao {
 
     @Query("SELECT * FROM command_logs WHERE username = :username ORDER BY timestamp DESC")
     suspend fun getLogsForUser(username: String): List<CommandLog>
+    //kullanıcının tüm log kayıtlarını sil
+    @Query("DELETE FROM command_logs WHERE username = :username")
+    suspend fun deleteLogsForUser(username: String): Int
 }
